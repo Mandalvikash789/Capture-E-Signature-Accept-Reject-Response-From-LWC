@@ -1,2 +1,2 @@
 # Capture-E-Signature-Accept-Reject-Response-From-LWC
-Capturing E-Signature, Accept, Reject Response from the Email Response Via LWC
+In this component, we are capturing the E-signature and the accept/reject response from the email. The Offer Response component acts as the parent component for the signature capture component. First, we validate the email, and only if the email is correct, we display the accept or reject buttons for capturing the response. If the response is 'Accept,' we then show the E-signature pad to capture the signature for the corresponding email address.
