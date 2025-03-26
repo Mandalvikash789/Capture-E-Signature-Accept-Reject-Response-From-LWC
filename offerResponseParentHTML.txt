@@ -1,0 +1,36 @@
+<template>
+    <lightning-card class="slds-align_absolute-center">
+        <div class="c-container">
+            <lightning-input type="email" variant="standard" name="email"
+                label="Please Enter Your Valid Email For Accept or Reject the Offer" placeholder="Enter your email here"
+                value={email} onchange={handleEmailChange} required
+                message-when-bad-input="Please enter a valid email address">
+            </lightning-input>
+
+            <template if:true={emailValidationMessage}>
+                <p class={emailValidationClass}>{emailValidationMessage}</p>
+            </template>
+
+            <!-- Show Accept/Reject buttons if email is valid -->
+            <div class="accept-rejectButton">
+                <template if:true={isEmailValid}>
+                    <div>
+                        <lightning-button variant="success" title="Accept action" label="Accept" onclick={handleAccept}>
+                        </lightning-button>
+                    </div>
+                    <div>
+                        <lightning-button variant="destructive" title="Reject action" label="Reject"
+                            onclick={handleReject}>
+                        </lightning-button>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Show Signature Pad if Accepted -->
+            <template if:true={isAccepted}>
+                <c-capture-signature email={email} isemailvalid={isemailvalid}>
+                </c-capture-signature>
+            </template>
+        </div>
+    </lightning-card>
+</template>

@@ -1,0 +1,56 @@
+public without sharing class SignatureHelper { 
+    @AuraEnabled
+    public static Attachment saveSign(String strSignElement, String emailData){
+        system.debug('Email :::: '+emailData);
+        //List<Applicant__c> applicantsDetails = [Select Id from Applicant__c where Applicant_Email__c =: email];
+        Applicant__c applicantsDetails = [Select Id from Applicant__c where Applicant_Email__c =: emailData];
+        Attachment objAttachment = new Attachment();
+        objAttachment.Name = 'Demo-Signature.png';
+        //objAttachment.ParentId = 'a0HdN000000QmFVUA0';
+        objAttachment.ParentId = applicantsDetails.Id;
+        objAttachment.ContentType = 'image/png';
+        objAttachment.Body = EncodingUtil.base64Decode(strSignElement);
+        system.debug('Attachment ::: '+objAttachment.Id);        
+        insert objAttachment;
+        return objAttachment;       
+    }
+    
+    @AuraEnabled
+    public static string checkEmailValid(String emailAttach){
+        System.debug('Emaillll ::::: '+emailAttach);
+        List<Applicant__c> appList = [Select Id, Applicant_Email__c FROM Applicant__c where Applicant_Email__c =: emailAttach];
+        
+        for (Applicant__c app : appList) {
+            if (app.Applicant_Email__c == emailAttach) {
+                return 'This Email is Valid';
+            }
+        }
+        return 'This Email is Invalid'; 
+    }
+    
+    @AuraEnabled
+    public static boolean checkExistingSignature(String emailCheck){
+        List<Attachment> attachments = [SELECT Id, ParentId FROM Attachment WHERE ParentId IN (SELECT Id FROM Applicant__c WHERE Applicant_Email__c = :emailCheck)];
+        if(!attachments.isEmpty()) {
+            return true;
+        }
+        return false;
+    }
+    
+    @AuraEnabled 
+    public static boolean offerResponse(String emailData, boolean response){
+        List<Applicant__c> applicantsDetails = [Select Id, Offer_Response__c FROM Applicant__c Where Applicant_Email__c =: emailData]; 
+        if(!applicantsDetails.isEmpty()){
+            Applicant__c applicants = applicantsDetails[0];
+            if(response){
+                applicants.Offer_Response__c = 'Accepted';
+            }else{
+                applicants.Offer_Response__c = 'Rejected';
+            }
+            update applicants;
+            return true;
+        }else {
+            return false;
+        } 
+    }	
+}

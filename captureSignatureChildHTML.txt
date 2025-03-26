@@ -1,0 +1,39 @@
+<template>
+    <lightning-card class="slds-align_absolute-center">
+        <div class="c-container">
+            <h2 class="slds-text-heading_medium slds-m-bottom_medium">Sign Here</h2>
+            <div style="text-align: center;">
+                <!-- Signature canvas -->
+                <canvas name="canvasItem" style="border:2px solid rgb(136, 135, 135); background: transparent;"></canvas>
+
+                <p class="slds-m-bottom_small " style="margin-top:20px">
+                    <!-- Save and Clear buttons -->
+                    <lightning-button 
+                        variant="brand" 
+                        label="Save" 
+                        title="Save" 
+                        onclick={handleSaveClick} 
+                        class="slds-m-left_x-small">
+                    </lightning-button>
+
+                    <lightning-button 
+                        variant="brand" 
+                        label="Clear" 
+                        title="Clear" 
+                        onclick={handleClearClick} 
+                        class="slds-m-left_x-small">
+                    </lightning-button>
+                </p>
+            </div>
+            <!-- <template if:true={isShowThankYou}>
+                <p class="slds-text-color_error">{emailValidationMessage}</p>
+                <c-thank-you-page></c-thank-you-page>
+            </template> -->
+
+            <!-- Display error if signature already exists -->
+            <template if:true={existingSignature}>
+                <p class="slds-text-color_error">{emailValidationMessage}</p>
+            </template>
+        </div>
+    </lightning-card>
+</template>

@@ -1,0 +1,196 @@
+import { LightningElement, api } from 'lwc';
+import saveSign from '@salesforce/apex/SignatureHelper.saveSign';
+import checkExistingSignature from '@salesforce/apex/SignatureHelper.checkExistingSignature';
+//import checkEmailValid from '@salesforce/apex/SignatureHelper.checkEmailValid';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+
+let isDownFlag = false;
+let isDotFlag = false;
+let prevX = 0;
+let currX = 0;
+let prevY = 0;
+let currY = 0;
+
+let x = "#0000A0"; // Blue color
+let y = 1.5; // Line width
+let canvasElement, ctx;
+let dataURL, convertedDataURI;
+
+export default class CaptureSignature extends LightningElement {
+    @api email; // Receive email from parent
+    //isRequiredTrueEmail = false;
+    @api isemailvalid = false;
+    emailValidationMessage = false;
+    existingSignature = false;
+   // isShowThankYou = false;
+
+
+    renderedCallback() {
+        canvasElement = this.template.querySelector('canvas');
+        ctx = canvasElement.getContext("2d");
+
+        canvasElement.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        canvasElement.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        canvasElement.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        canvasElement.addEventListener('mouseout', this.handleMouseOut.bind(this));
+        this.checkSignatureExistence();
+    }
+
+    checkSignatureExistence() {
+        checkExistingSignature({ emailCheck: this.email })
+            .then(result => {
+                if (result) {
+                    this.existingSignature = true;
+                    this.emailValidationMessage = 'A signature is already saved for this email. Please contact your administrator to update the signature.';
+                    this.emailValidationClass = 'slds-text-color_error';
+                } else {
+                    this.existingSignature = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error checking signature existence:', error);
+                this.showToast('Error', 'There was an error checking for existing signature.', 'error');
+            });
+    }
+
+    handleEmailChange(event) {
+        this.email = event.target.value;
+    }
+
+    handleMouseMove(event) {
+        this.searchCoordinatesForEvent('move', event);
+    }
+
+    handleMouseDown(event) {
+        this.searchCoordinatesForEvent('down', event);
+    }
+
+    handleMouseUp(event) {
+        this.searchCoordinatesForEvent('up', event);
+    }
+
+    handleMouseOut(event) {
+        this.searchCoordinatesForEvent('out', event);
+    }
+
+    // handleClickOfCanvas(event) {
+    //     this.isValidateEmail = true;
+    // }
+
+    handleClickOfCanvas(event) {
+        if (this.email) {
+            this.validateEmail();
+        }
+    }
+
+    handleSaveClick() {
+        ctx.globalCompositeOperation = "destination-over";
+        ctx.fillStyle = "#FFF";
+        ctx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+
+        dataURL = canvasElement.toDataURL("image/png");
+        convertedDataURI = dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+
+        console.log('Email : ', this.email);
+        console.log('Signature Data:', convertedDataURI);
+    
+
+        saveSign({
+            strSignElement: convertedDataURI,
+            emailData: this.email
+        })
+            .then(result => {
+                console.log('Attachment saved:', result);
+                this.showToast('Success', 'Signature saved successfully!', 'success');
+                window.location.reload();
+               // this.isShowThankYou = true;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.showToast('Error', error.body.message, 'error');
+            });
+    }
+
+    // Email validation logic
+    // validateEmail() {
+    //     console.log('Email to Validate:', this.email);
+    //     checkEmailValid({ emailAttach: this.email })
+    //         .then(result => {
+    //             console.log('Inside then : ',result);
+    //             if (result == 'This Email is Valid') {
+    //                 console.log('Inside If : ', result);
+    //                 this.emailValidationMessage = '';
+    //                 this.emailValidationClass = 'slds-text-color_success'; 
+    //             } else {
+    //                 console.log('Inside Else : ', result);
+    //                 this.emailValidationMessage = result;
+    //                 this.emailValidationClass = 'slds-text-color_error'; 
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error('Error validating email:', error);
+    //             this.emailValidationMessage = 'There was an error while validating the email.';
+    //             this.emailValidationClass = 'slds-text-color_error';
+    //         });
+    // }
+
+    handleClearClick() {
+        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    }
+
+    searchCoordinatesForEvent(requestedEvent, event) {
+        event.preventDefault();
+
+        if (requestedEvent === 'down') {
+            this.setupCoordinate(event);
+            isDownFlag = true;
+            isDotFlag = true;
+            if (isDotFlag) {
+                this.drawDot();
+                isDotFlag = false;
+            }
+        }
+
+        if (requestedEvent === 'up' || requestedEvent === 'out') {
+            isDownFlag = false;
+        }
+
+        if (requestedEvent === 'move' && isDownFlag) {
+            this.setupCoordinate(event);
+            this.redraw();
+        }
+    }
+
+    setupCoordinate(eventParam) {
+        const clientRect = canvasElement.getBoundingClientRect();
+        prevX = currX;
+        prevY = currY;
+        currX = eventParam.clientX - clientRect.left;
+        currY = eventParam.clientY - clientRect.top;
+    }
+
+    redraw() {
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(currX, currY);
+        ctx.strokeStyle = x;
+        ctx.lineWidth = y;
+        ctx.closePath();
+        ctx.stroke();
+    }
+
+    drawDot() {
+        ctx.beginPath();
+        ctx.fillStyle = x;
+        ctx.fillRect(currX, currY, y, y);
+        ctx.closePath();
+    }
+
+    showToast(title, message, variant) {
+        this.dispatchEvent(new ShowToastEvent({
+            title,
+            message,
+            variant
+        }));
+    }
+}

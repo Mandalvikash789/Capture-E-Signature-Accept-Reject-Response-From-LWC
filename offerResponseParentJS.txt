@@ -1,0 +1,81 @@
+import { LightningElement, track } from 'lwc';
+import checkEmailValid from '@salesforce/apex/SignatureHelper.checkEmailValid';
+import offerResponse from '@salesforce/apex/SignatureHelper.offerResponse';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+
+export default class OfferResponseLWC extends LightningElement {
+    @track email = '';
+    @track isemailvalid = false;  // Email validity flag
+    @track isAccepted = false;  // Show signature pad after acceptance
+    emailValidationMessage = '';
+    emailValidationClass = '';
+
+    // Handle Email Change
+    handleEmailChange(event) {
+        this.email = event.target.value;
+        this.validateEmail();
+
+    }
+
+    // Validate the email
+    validateEmail() {
+        checkEmailValid({ emailAttach: this.email })
+            .then(result => {
+                if (result === 'This Email is Valid') {
+                    this.isEmailValid = true;
+                    this.emailValidationMessage = '';
+                    this.emailValidationClass = 'slds-text-color_success';
+                } else {
+                    this.isEmailValid = false;
+                    this.emailValidationMessage = result;
+                    this.emailValidationClass = 'slds-text-color_error';
+                }
+            })
+            .catch(error => {
+                this.emailValidationMessage = 'Error validating email.';
+                this.emailValidationClass = 'slds-text-color_error';
+                this.isEmailValid = false;
+            });
+    }
+
+    // Accept Button Handler
+    handleAccept() {
+        this.isAccepted = true;
+        this.submitOfferResponse(true);
+    }
+
+    // Reject Button Handler
+    handleReject() {
+        this.isAccepted = false;
+        this.submitOfferResponse(false);
+        window.location.href = '/thank-you-page';
+    }
+
+    // Submit Offer Response
+    submitOfferResponse(response) {
+        offerResponse({
+            emailData: this.email,
+            response: response
+        })
+        .then(result => {
+            if (result) {
+                //this.showToast('Success', 'Offer response saved successfully!', 'success');
+            } else {
+                //this.showToast('Error', 'No matching applicant found for the provided email.', 'error');
+            }
+        })
+        .catch(error => {
+            this.showToast('Error', error.body.message, 'error');
+        });
+    }
+
+    // Toast notification method
+    showToast(title, message, variant) {
+        const event = new ShowToastEvent({
+            title: title,
+            message: message,
+            variant: variant
+        });
+        this.dispatchEvent(event);
+    }
+}

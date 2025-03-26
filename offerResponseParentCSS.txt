@@ -1,0 +1,22 @@
+.c-container {
+	margin: 20px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 10px;
+	flex-direction: column;
+}
+
+.slds-text-color_success {
+	color: green;
+}
+
+.slds-text-color_error {
+	color: red;
+}
+
+.accept-rejectButton {
+	display: flex;
+	justify-content: center;
+	gap: 20px;
+}
